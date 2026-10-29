@@ -1,0 +1,13 @@
+{
+  "name": "coding-rules",
+  "version": "1.1.0",
+  "description": "Coding rules as Agent Skills: general programming conventions, Go coding conventions, and a hexagonal project layout sliced by bounded contexts.",
+  "author": {
+    "name": "Vasilii Morozov",
+    "url": "https://github.com/vasilesk"
+  },
+  "homepage": "https://github.com/vasilesk/coding-rules",
+  "repository": "https://github.com/vasilesk/coding-rules",
+  "license": "MIT",
+  "keywords": ["agent-skills", "coding-conventions", "code-style", "go", "golang", "hexagonal-architecture", "ddd"]
+}
