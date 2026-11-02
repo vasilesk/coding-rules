@@ -1,6 +1,6 @@
 ---
 name: coding-conventions
-description: "Language-agnostic coding conventions — DRY and single responsibility, early returns, immutable objects with validating constructors, typed identifiers and enums, what comments should say, TEMPORARY markers, structured logging with snake_case keys, keyset pagination for batch processing, separating infrastructure tests, database schema rules (table and index naming, UUID keys, NOT NULL, created_at/updated_at, no foreign keys), and environment-based configuration. Use whenever writing, reviewing, or refactoring code in any language, designing a table or migration, or adding comments, logging, or configuration. For Go code, load `go-coding-conventions` alongside."
+description: "Language-agnostic coding conventions — DRY and single responsibility, early returns, immutable objects with validating constructors, typed identifiers and enums, what comments should say, TEMPORARY markers, structured logging with snake_case keys and past-tense messages, keyset pagination for batch processing, separating infrastructure tests, database schema rules (table and index naming, UUID keys, NOT NULL, created_at/updated_at, no foreign keys), and environment-based configuration. Use whenever writing, reviewing, or refactoring code in any language, designing a table or migration, or adding comments, logging, or configuration. For Go code, load `go-coding-conventions` alongside."
 ---
 
 - Common rules:
@@ -37,6 +37,7 @@ description: "Language-agnostic coding conventions — DRY and single responsibi
   - Use structured logging
   - Include relevant context in log fields
   - Use snake_case field keys (`document_id`, `group_key`)
+  - Write the message as an event that has happened, in the past tense: `proxy started`, `chat completion failed`, `validation error occured`. A log line records a fact, so failures and successes read alike; the error itself goes into a field, not into the message.
 - Batch processing:
   - Process large result sets as a stream backed by cursor (keyset) pagination, instead of loading everything into memory or paginating by offset
 - Testing:
