@@ -1,6 +1,6 @@
 {
   "name": "coding-rules",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Coding rules as Agent Skills: general programming conventions, Go coding conventions, and a hexagonal project layout sliced by bounded contexts.",
   "author": {
     "name": "Vasilii Morozov",

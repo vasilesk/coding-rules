@@ -1,6 +1,6 @@
 ---
 name: go-coding-conventions
-description: "Go-specific coding conventions on top of `coding-conventions` — ctx propagation, pointer vs value receivers, mo.Option for optional values, named ID and enum types, an injected clock instead of time.Now, samber/lo over loops, error wrapping with gerund messages and sentinel errors, iter.Seq streaming in batch processing, testify suites and go.uber.org/mock, build tags for infrastructure tests, order of declarations in a file, params structs and functional options for partial updates. Use whenever writing, reviewing, or refactoring Go code (*.go, *_test.go). Not for package layout or dependencies between packages — use `go-hexagonal-architecture`."
+description: "Go-specific coding conventions on top of `coding-conventions` — ctx propagation, pointer vs value receivers, mo.Option for optional values, named ID and enum types, an injected clock instead of time.Now, samber/lo over loops, error wrapping with gerund messages and sentinel errors, iter.Seq streaming in batch processing, testify suites and go.uber.org/mock, build tags for infrastructure tests, order of declarations in a file and splitting a package into files, params structs and functional options for partial updates. Use whenever writing, reviewing, or refactoring Go code (*.go, *_test.go). Not for package layout or dependencies between packages — use `go-hexagonal-architecture`."
 ---
 
 Architecture rules (ports, where interfaces live, compile-time checks, dependency directions) are in the `go-hexagonal-architecture` skill; language-agnostic rules (objects and constructors, comment content, logging, early returns) are in `coding-conventions`. This skill covers what is specific to Go code.
@@ -61,8 +61,12 @@ return fmt.Errorf("failed to create user: %w", err)
   - Handle transactions explicitly
 
 - File contents
-  - The order of the file entities is the next: public interfaces, public types, public structs, private implementations of public interfaces (if the private implementation contains fields of private interface types, these types are described right above this private implementation)
-  - When some struct is described, it is followed up by constructor, then public methods, then private methods
+  - Order declarations by their importance to a reader of the API, not by their kind: a file opens with what it exists for, and technical details come last
+    - The file starts with its main exported entity: the type the file is named after or the package exists for (in a port package, the port interface). It is followed by its constructor, then exported methods, then unexported methods
+    - Other exported types follow, each as a block: the type, its exported constants (enum values), its constructors and functions returning it (such as `Err` returning a field), then its methods
+    - Unexported code goes last: helper functions, then unexported types with their methods (implementations of interfaces, `slog.LogValuer` and the like). An unexported interface used by a field of such a type is declared right above that type
+    - An unexported constant or variable is declared right above its only user; one used in several places opens the unexported section. It never opens the file: a service value at the top hides the API behind it
+  - Split a package into files by topic: the file named after the package holds its main type, and a cohesive group of supporting types with their helpers (`field.go` with `KeyValue`, `KV`, `Err` and the conversion to `slog.Attr`) may live in a file of its own. Do not split by kind (`types.go`, `consts.go`) or force one type per file: a file is read as one topic
   - Avoid redundant package names in methods/types (e.g., use List() instead of ListObjects() in the object package, `taxdoc.Store` instead of `taxdoc.TaxDocumentStore`)
   - Use consistent parameter ordering (ctx first, ID second, options last)
 ```go

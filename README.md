@@ -7,7 +7,7 @@ Coding rules as Agent Skills: general programming conventions, Go coding convent
 | Skill | What it covers |
 | --- | --- |
 | [`coding-conventions`](skills/coding-conventions/SKILL.md) | Language-agnostic rules: immutable objects and validating constructors, typed identifiers, comment content, structured logging, cursor pagination, database and configuration conventions |
-| [`go-coding-conventions`](skills/go-coding-conventions/SKILL.md) | Go-specific rules on top of `coding-conventions`: receivers, `mo.Option`, `lo`, injected clock, error wrapping and sentinels, iterators for batch processing, testify and gomock, file layout |
+| [`go-coding-conventions`](skills/go-coding-conventions/SKILL.md) | Go-specific rules on top of `coding-conventions`: receivers, `mo.Option`, `lo`, injected clock, error wrapping and sentinels, iterators for batch processing, testify and gomock, declaration order and splitting into files |
 | [`go-hexagonal-architecture`](skills/go-hexagonal-architecture/SKILL.md) | Hexagonal architecture (ports and adapters) sliced by bounded context: directory layout, dependency rules, `kernel`/`platform`/`pkg`, ports, data formats, wiring, enforcement with go-arch-lint and depguard |
 
 `go-coding-conventions` builds on `coding-conventions` and refers to `go-hexagonal-architecture` for architecture rules, so install them together.
