@@ -87,6 +87,7 @@ Code used by several contexts goes to one of three places, chosen by what it kno
 ## Ports
 
 - Secondary (driven) ports are the interfaces in `repo/{name}` and `client/{name}`. They are the full contract shared by the real implementation and its decorators (metrics, tracing, caching).
+- A port expresses what the application asks of the dependency, in the core's terms and no wider: its parameters admit only what the dependency is meant to receive. A type that serves another stage of the use case (e.g., a request carrying a routing hint the core consumes) is not reused just because it is at hand; the port declares its own type, and the service translates where it calls the port. Translation to the dependency's own format stays in the adapter.
 - Every implementation has a compile-time check: `var _ repo.Repo = (*repo)(nil)`.
 - Consumers depend on the port interface directly. A narrower interface at the place of usage is declared only when the consumer needs a small subset of the methods.
 - Primary (driving) adapters are the handlers. The primary port of a context is the set of exported methods of its services; there is no separate package of primary port interfaces. Each handler declares a small interface with the service methods it calls, at the place of usage. An explicit interface for a service is introduced only when the service gets several implementations (e.g., authorization or metrics decorators), and then it is an ordinary port.

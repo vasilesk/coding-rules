@@ -84,7 +84,22 @@ type Repo interface {
   - go.uber.org/mock
 
 - Function design:
-  - Functions should use all passed parameters
+  - Functions should use all passed parameters, and their parameter types should admit nothing the function cannot handle (see `coding-conventions`)
+```go
+// ✅ Good
+type ChargeRequest struct {
+    Amount money.Amount
+    Card   CardToken
+}
+
+func (c *Client) Charge(ctx context.Context, req ChargeRequest) error
+
+err := payments.Charge(ctx, ChargeRequest{Amount: order.Total(), Card: order.Card})
+
+// ❌ Bad
+// Charge expects the coupon to be applied and cleared by the pricing step.
+func (c *Client) Charge(ctx context.Context, order Order) error
+```
   - Return fully populated structs (see `coding-conventions`):
 ```go
 // ✅ Good

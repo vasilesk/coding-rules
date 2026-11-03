@@ -7,12 +7,14 @@ description: "Language-agnostic coding conventions — DRY and single responsibi
   - Follow DRY principles
   - Follow Single Responsibility principle
   - Depend on abstractions, not implementations; keep dependencies explicit and minimal
+  - A signature accepts only what the function needs, in a type whose every value it can handle. When the caller's data carries more (a field meaningful only to another part of the code), declare a narrower type for the callee and convert at the call. Do not pass the wide type and expect someone before the call to have cleared the extra part: such a contract lives only in a comment, and a new caller or a changed order of calls breaks it silently at runtime, while a type mismatch fails to compile
   - Each service should have clear boundaries and responsibilities
   - Keep functions/methods short and focused.
   - Handle edge cases first with early returns, then write the main logic without nesting
 - Objects:
   - Prefer immutable objects. Domain objects are immutable too: a change produces a new value or goes to storage as an explicit update, the object is not mutated in place
   - Prefer passing immutable parameters and receiving new values over mutating parameters
+  - Rewrite data on its way only to change what it means (swap a key, pick another model), not to fit a consumer further on (clearing a field it cannot accept): that is the consumer's own type with a conversion at its boundary (see Common rules), and it does not depend on who runs before the consumer
   - Initialize an object in a single step after preparing all its fields
   - An object must be valid right after creation: validation is part of construction, not a separate IsValid-like method
   - Write a constructor when it adds something: validation, derived fields, generated values (IDs). A constructor that only copies its arguments into fields adds nothing over direct initialization with named fields
