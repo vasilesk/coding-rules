@@ -10,6 +10,7 @@ description: "Language-agnostic coding conventions — DRY and single responsibi
   - A signature accepts only what the function needs, in a type whose every value it can handle. When the caller's data carries more (a field meaningful only to another part of the code), declare a narrower type for the callee and convert at the call. Do not pass the wide type and expect someone before the call to have cleared the extra part: such a contract lives only in a comment, and a new caller or a changed order of calls breaks it silently at runtime, while a type mismatch fails to compile
   - Each service should have clear boundaries and responsibilities
   - Keep functions/methods short and focused.
+  - Build the processing of a collection from small steps, each doing one thing over the whole input: validate, filter, transform, aggregate. A loop that checks, converts and accumulates at once mixes concerns and hides which step can fail; separate steps read one by one, and the pure ones have no error path. Keep a single pass when the steps cannot be separated without repeating work (parsing an item to check it, then again to use it) or when the input is a stream too large to traverse twice
   - Handle edge cases first with early returns, then write the main logic without nesting
 - Objects:
   - Prefer immutable objects. Domain objects are immutable too: a change produces a new value or goes to storage as an explicit update, the object is not mutated in place

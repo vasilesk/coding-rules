@@ -22,7 +22,8 @@ Architecture rules (ports, where interfaces live, compile-time checks, dependenc
     - Use lo.Reduce for aggregating values
     - Use other lo functions when appropriate (lo.GroupBy, lo.Uniq, etc.)
     - Use `lo/it` for the same operations over `iter.Seq`
-    - Use a plain `for` loop when the body returns errors, `continue`s, or logs: forcing such code into lo callbacks hides control flow
+    - Express each step of processing a collection (see `coding-conventions`) with its own lo function: a check of the input as a whole (`lo.FindDuplicatesBy`, `lo.ContainsBy`) goes before the transformation (`lo.KeyBy`), not into a loop that fills a map and fails on a repeated key
+    - Use a plain `for` loop when the work on an item returns errors, `continue`s, or logs (parsing, a call): forcing such code into lo callbacks hides control flow
 
 - Comments:
   - Follow godoc conventions
