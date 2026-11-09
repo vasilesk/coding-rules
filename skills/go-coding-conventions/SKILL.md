@@ -1,6 +1,6 @@
 ---
 name: go-coding-conventions
-description: "Go-specific coding conventions on top of `coding-conventions` — ctx propagation, pointer vs value receivers, mo.Option for optional values, named ID and enum types, an injected clock instead of time.Now, samber/lo over loops, error wrapping with gerund messages and sentinel errors, iter.Seq streaming in batch processing, testify suites and go.uber.org/mock, build tags for infrastructure tests, order of declarations in a file and splitting a package into files, params structs and functional options for partial updates. Use whenever writing, reviewing, or refactoring Go code (*.go, *_test.go). Not for package layout or dependencies between packages — use `go-hexagonal-architecture`."
+description: "Go-specific coding conventions on top of `coding-conventions` — ctx propagation, pointer vs value receivers, mo.Option for optional values, named ID and enum types, an injected clock instead of time.Now, samber/lo over loops, error wrapping with gerund messages and sentinel errors, iter.Seq streaming in batch processing, testify suites and go.uber.org/mock, build tags for infrastructure tests, order of declarations in a file and splitting a package into files, named result parameters, params structs and functional options for partial updates. Use whenever writing, reviewing, or refactoring Go code (*.go, *_test.go). Not for package layout or dependencies between packages — use `go-hexagonal-architecture`."
 ---
 
 Architecture rules (ports, where interfaces live, compile-time checks, dependency directions) are in the `go-hexagonal-architecture` skill; language-agnostic rules (objects and constructors, comment content, logging, early returns) are in `coding-conventions`. This skill covers what is specific to Go code.
@@ -23,7 +23,31 @@ Architecture rules (ports, where interfaces live, compile-time checks, dependenc
     - Use other lo functions when appropriate (lo.GroupBy, lo.Uniq, etc.)
     - Use `lo/it` for the same operations over `iter.Seq`
     - Express each step of processing a collection (see `coding-conventions`) with its own lo function: a check of the input as a whole (`lo.FindDuplicatesBy`, `lo.ContainsBy`) goes before the transformation (`lo.KeyBy`), not into a loop that fills a map and fails on a repeated key
-    - Use a plain `for` loop when the work on an item returns errors, `continue`s, or logs (parsing, a call): forcing such code into lo callbacks hides control flow
+    - Use a plain `for` loop when the work on an item returns errors, `continue`s, or logs (parsing, a call): forcing such code into lo callbacks hides control flow. Move that work into a function processing one item and keep jumps out of the loop body as `coding-conventions` requires
+```go
+// ✅ Good
+for _, row := range rows {
+    if err := s.importRow(ctx, row); err != nil {
+        return fmt.Errorf("importing row %d: %w", row.Line, err)
+    }
+}
+
+// ❌ Bad: exits scattered among the work on an item
+for _, row := range rows {
+    amount, err := parseAmount(row.Amount)
+    if err != nil {
+        continue
+    }
+    entry := newEntry(row, amount)
+    if _, ok := seen[entry.Key()]; ok {
+        continue
+    }
+    seen[entry.Key()] = struct{}{}
+    if err := s.store.Save(ctx, entry); err != nil {
+        return fmt.Errorf("saving entry: %w", err)
+    }
+}
+```
 
 - Comments:
   - Follow godoc conventions
@@ -130,6 +154,19 @@ func NewPeriod(from, to time.Time) (Period, error) {
     }
 
     return Period{From: from, To: to}, nil
+}
+```
+  - Do not name result parameters. A named result is a variable living through the whole body from its zero value: an assignment far from `return` or a bare `return` makes the reader trace the body to learn what the function returns, and a `:=` in an inner scope silently shadows it. Names are acceptable only to document several results of the same type (`(lat, lon float64, err error)`); even then they are documentation: do not assign to them, do not use bare `return`, return explicit values
+  - A deferred function that changes the result (joining a `Close` error into `err`) is the only case where a named result is used as a variable. Keep such defers rare; the body still returns explicit values, which the defer then sees
+```go
+func export(path string, docs []Doc) (err error) {
+    f, err := os.Create(path)
+    if err != nil {
+        return fmt.Errorf("creating file: %w", err)
+    }
+    defer func() { err = errors.Join(err, f.Close()) }()
+
+    return writeDocs(f, docs)
 }
 ```
   - Pass a parameters struct instead of a long argument list: when a function takes more than ~5 parameters, or several adjacent parameters of the same type that are easy to swap (`keysBatchSize, itemsBatchSize, workersCount int`; three `decimal.Decimal` amounts)
