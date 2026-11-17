@@ -1,0 +1,51 @@
+# Pins the marketplace entry of this plugin to the commit just pushed to main.
+# The vasilesk marketplace (vasilesk/agent-skills) pins coding-rules by sha, and
+# installed copies auto-update only when that sha changes.
+name: Pin in marketplace
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Runs queue instead of racing on the marketplace's main; a newer pending run
+# replaces an older pending one, so the last push wins.
+concurrency:
+  group: pin-in-marketplace
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the marketplace
+        uses: actions/checkout@v5
+        with:
+          repository: vasilesk/agent-skills
+          ssh-key: ${{ secrets.MARKETPLACE_DEPLOY_KEY }}
+
+      - name: Pin coding-rules to the pushed commit
+        env:
+          SHA: ${{ github.sha }}
+          MANIFEST: .claude-plugin/marketplace.json
+        run: |
+          jq -e '.plugins[] | select(.name == "coding-rules")' "$MANIFEST" > /dev/null \
+            || { echo "::error::coding-rules is not listed in $MANIFEST"; exit 1; }
+
+          jq --arg sha "$SHA" \
+            '(.plugins[] | select(.name == "coding-rules") | .source.sha) = $sha' \
+            "$MANIFEST" > "$RUNNER_TEMP/marketplace.json"
+          mv "$RUNNER_TEMP/marketplace.json" "$MANIFEST"
+
+          if git diff --quiet; then
+            echo "coding-rules is already pinned to $SHA"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Pin coding-rules to ${SHA::7}" \
+            -m "https://github.com/vasilesk/coding-rules/commit/$SHA"
+          git push
