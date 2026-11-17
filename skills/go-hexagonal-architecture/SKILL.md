@@ -18,7 +18,7 @@ This project follows Hexagonal Architecture (Ports and Adapters), sliced by boun
 │   │   └── {name}/                  # e.g., an external API transport, HTTP response helpers
 │   ├── bootstrap/                   # optional: wiring helpers once main.go grows too large
 │   ├── workflow/                    # optional: use cases that orchestrate several contexts
-│   └── {context}/                   # bounded context (e.g., invoice, report)
+│   └── {context}/                   # bounded context (e.g., billing, reporting)
 │       ├── domain/                  # entities, value objects, domain errors
 │       ├── service/                 # application services (use cases)
 │       ├── repo/
@@ -124,7 +124,7 @@ Wiring (the composition root) is the single place that knows which concrete impl
 
 - Wiring lives in `cmd/{app}/main.go`; it moves to `internal/bootstrap` when it grows. Assembling servers and consumers from handlers (building the router, the `http.Server`) is wiring and lives there too, not in `platform`.
 - Wiring is written by hand; no DI containers or code generators.
-- Import aliases follow the `{context}{package}` pattern: `invoiceservice`, `invoicepostgres`, `invoicehttp`. Aliases are expected mostly in wiring, `inprocess` adapters and `workflow`.
+- Import aliases follow the `{context}{package}` pattern: `billingservice`, `billingpostgres`, `billinghttp`. Aliases are expected mostly in wiring, `inprocess` adapters and `workflow`.
 
 ```go
 // cmd/httpserver/main.go
@@ -134,14 +134,14 @@ payments := paymentsapi.New(httpClient, cfg.Payments) // platform/paymentsapi, s
 customerRepo := customermetrics.New(customerpostgres.New(db), registry)
 customerSvc := customerservice.New(customerRepo, logger)
 
-invoiceSvc := invoiceservice.New(
-	invoicepostgres.New(db),
-	invoiceinprocess.NewCustomerClient(customerSvc),
-	invoicepayments.New(payments),
+billingSvc := billingservice.New(
+	billingpostgres.New(db),
+	billinginprocess.NewCustomerClient(customerSvc),
+	billingpayments.New(payments),
 	logger,
 )
 
-srv := bootstrap.NewHTTPServer(cfg.HTTP, customerhttp.New(customerSvc), invoicehttp.New(invoiceSvc))
+srv := bootstrap.NewHTTPServer(cfg.HTTP, customerhttp.New(customerSvc), billinghttp.New(billingSvc))
 ```
 
 ## Database
@@ -157,18 +157,18 @@ srv := bootstrap.NewHTTPServer(cfg.HTTP, customerhttp.New(customerSvc), invoiceh
 
 ```yaml
 components:
-  invoice-domain:   { in: internal/invoice/domain }
-  invoice-ports:    { in: [internal/invoice/repo/*, internal/invoice/client/*] }
-  invoice-service:  { in: internal/invoice/service }
-  invoice-adapters: { in: [internal/invoice/repo/*/*, internal/invoice/client/*/*] }
-  invoice-handlers: { in: internal/invoice/handler/* }
+  billing-domain:   { in: internal/billing/domain }
+  billing-ports:    { in: [internal/billing/repo/*, internal/billing/client/*] }
+  billing-service:  { in: internal/billing/service }
+  billing-adapters: { in: [internal/billing/repo/*/*, internal/billing/client/*/*] }
+  billing-handlers: { in: internal/billing/handler/* }
 
 deps:
-  invoice-domain:   { mayDependOn: [kernel] }
-  invoice-ports:    { mayDependOn: [invoice-domain, kernel] }
-  invoice-service:  { mayDependOn: [invoice-domain, invoice-ports, kernel] }
-  invoice-adapters: { mayDependOn: [invoice-ports, invoice-domain, kernel, platform, pkg] }
-  invoice-handlers: { mayDependOn: [invoice-service, invoice-domain, kernel, platform, pkg] }
+  billing-domain:   { mayDependOn: [kernel] }
+  billing-ports:    { mayDependOn: [billing-domain, kernel] }
+  billing-service:  { mayDependOn: [billing-domain, billing-ports, kernel] }
+  billing-adapters: { mayDependOn: [billing-ports, billing-domain, kernel, platform, pkg] }
+  billing-handlers: { mayDependOn: [billing-service, billing-domain, kernel, platform, pkg] }
 ```
 
 - go-arch-lint does not check the standard library. Bans such as `net/http` in the core are a depguard rule in golangci-lint; it matches files by glob (`**/internal/*/domain/**`), so the rule needs no entry per context.

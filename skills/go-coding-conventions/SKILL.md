@@ -52,6 +52,7 @@ for _, row := range rows {
 - Comments:
   - Follow godoc conventions
   - Use // instead of /* */
+  - State what a package is for in the doc comment on its `package` clause (`// Package billing ...`), in one file of the package
 
 - Error handling:
   - Always handle errors explicitly
@@ -62,7 +63,15 @@ return fmt.Errorf("creating user: %w", err)
 // ❌ Bad
 return fmt.Errorf("failed to create user: %w", err)
 ```
-  - Declare expected failures as sentinel errors (`var ErrNotFound = errors.New("...")`) with a comment saying when they are returned; callers classify with `errors.Is`
+  - Declare expected failures as sentinel errors (`var ErrNotFound = errors.New("...")`) with a comment saying what condition the error means, not which functions return it (a comment does not name its callers, see `coding-conventions`); callers classify with `errors.Is`. Which errors an operation returns belongs to the operation's own contract
+```go
+// ✅ Good
+// ErrUnexpectedDocumentStatus means a document is not in the status an operation on it requires.
+var ErrUnexpectedDocumentStatus = errors.New("unexpected document status")
+
+// ❌ Bad
+// ErrUnexpectedDocumentStatus is returned by the autotest pipeline stages when ...
+```
     - Exported sentinels live in the domain package and form the contract for callers
     - Unexported sentinels inside a service are fine for classifying outcomes internally (skip vs fail)
   - Introduce a custom error type only when callers need data from the error, not just its kind
@@ -92,7 +101,7 @@ return fmt.Errorf("failed to create user: %w", err)
     - Unexported code goes last: helper functions, then unexported types with their methods (implementations of interfaces, `slog.LogValuer` and the like). An unexported interface used by a field of such a type is declared right above that type
     - An unexported constant or variable is declared right above its only user; one used in several places opens the unexported section. It never opens the file: a service value at the top hides the API behind it
   - Split a package into files by topic: the file named after the package holds its main type, and a cohesive group of supporting types with their helpers (`field.go` with `KeyValue`, `KV`, `Err` and the conversion to `slog.Attr`) may live in a file of its own. Do not split by kind (`types.go`, `consts.go`) or force one type per file: a file is read as one topic
-  - Avoid redundant package names in methods/types (e.g., use List() instead of ListObjects() in the object package, `taxdoc.Store` instead of `taxdoc.TaxDocumentStore`)
+  - Avoid redundant package names in methods/types (e.g., use List() instead of ListObjects() in the object package, `billing.Store` instead of `billing.BillingStore`)
   - Use consistent parameter ordering (ctx first, ID second, options last)
 ```go
 type Repo interface {
