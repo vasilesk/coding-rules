@@ -26,14 +26,27 @@ description: "Language-agnostic coding conventions — DRY and single responsibi
   - Values fixed in source code (enum members, well-known values, error values) are an exception. Inside the type's package, which owns the invariant, they may be declared directly, bypassing the constructor; a test that runs each of them through the constructor is advisable. Anywhere, including outside that package, they may be built through the constructor once at program initialization, in a way that stops the program on failure, so an invalid value fails at startup, not while serving a request. Outside the type's package this is the only way. Either way the value is not built where it is used: a constructor call there adds an error path that cannot fire.
 - Documentation:
   - All comments should be in English
-  - Public API (exported functions, types, methods) must be documented
-  - A comment explains what the code cannot say: why, the contract, invariants, non-obvious ordering, units, inclusive/exclusive bounds. Do not restate the name
+  - Public API (exported functions, types, methods) must be documented. A method implementing a documented interface method is covered by the interface's comment (see below)
+  - A comment explains what the code cannot say: the contract, invariants, why it is built this way in terms of the entity's own properties, non-obvious ordering, units, inclusive/exclusive bounds. Do not restate the name or narrate the body: a retelling adds nothing the code does not say and goes stale with the first change of the code
 ```
 ✅ Good: "the half-open window [From, To) of source item dates that one aggregation run merged into a document"
 ✅ Good: "linking source items runs before the number is reserved: it is the longest statement, and the reservation holds a lock other workers queue behind"
 ❌ Bad:  "aggregation period" (for AggregationPeriod)
 ❌ Bad:  "set document id"
+❌ Bad:  "maps the error: an unknown ID first, then an entity the stage does not take, and anything else as a failure"
 ```
+  - A comment says what the entity is and what it guarantees, never who uses it or which feature needs it: no callers, consumers, tests, services or tickets (except `TEMPORARY` markers). Check: the comment must stay true if a second, unrelated caller appears. Why the code exists in the project goes to the commit message or the MR description
+```
+✅ Good: "processes only the given IDs, so concurrent calls never touch each other's documents"
+❌ Bad:  "so that parallel autotests do not process each other's documents"
+❌ Bad:  "the outcome of an autotest pipeline stage"
+```
+  - Domain and service comments do not mention transport, clients or entry points (gRPC, HTTP, CLI): these layers do not know what sits above them, and their comments should not either
+  - A comment outside a function body documents the declaration right below it, the module or package declaration included: what an operation does to the data goes on the operation, what a value holds goes on its type, what a package is for goes on the package. Documentation tools and IDE hovers show only such comments; a comment attached to no declaration is read only by someone scrolling the file
+```
+❌ Bad: "a failed document is not rolled back" on the result type instead of the stage that produced it
+```
+  - An interface method comment states the contract that holds for any implementation: inputs, outputs, errors, guarantees. An implementation does not repeat the contract; it documents only how the contract is achieved (transactions, batching, order of checks), and only when that is not obvious from the code
   - Mark temporary code with `TEMPORARY (<ticket>)`, the reason it exists and the condition under which it can be deleted
   - Include examples for non-obvious behaviors
   - All comments in function bodies (not in doc comments) should start with a small letter (except mentioning of some named entities)
